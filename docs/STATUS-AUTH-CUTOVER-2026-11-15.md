@@ -51,6 +51,15 @@ https://mastersite-git-auth-cutover-staging-michaeloeichhorst-8656.vercel.app/ap
 - **Wichtig:** In der Vorschau derzeit keine neuen Benutzerdaten speichern oder bestehende Einträge ändern. Das Original-Pullrates-Projekt wird noch verwendet, und vor dem produktiven Cutover muss eine letzte Delta-Synchronisierung stattfinden.
 - Funktionen zur Registrierung, Passwortzurücksetzung und zum Löschen von Alt-Konten sind bis zu ihrer gesicherten Umsetzung explizit deaktiviert.
 
+## Vom Kontoinhaber bestätigte App-Tests
+
+- **Feelings-Turnier:** Der ursprüngliche Ersteller-/Admin-Login über die neue Better-Auth-Instanz funktioniert. Die bisherigen Turnierdaten und Adminfunktionen werden angezeigt.
+- **Pokémon Pullrates:** Der neue, unabhängige Login funktioniert. Die bestehenden Pulls/Kartenlisten werden korrekt angezeigt.
+- **Pullrates-Schreibweg:** Im Ziel eine neue Testliste per authentifizierter `pull_lists('create')` angelegt und per `pull_lists('save')` gespeichert, aber beide Schritte in **derselben Transaktion vollständig zurückgerollt**. Danach unverändert 5 Listen; kein QA-Datensatz zurückgeblieben.
+- **Feelings-Admin-Schreibweg:** Mit synthetischem, app-spezifischem Admin-JWT wurde `set_tournament_registration_enabled(false)` innerhalb einer Transaktion erfolgreich ausgeführt; nach `ROLLBACK` unverändert 1 Settings-Zeile, 1 Teilnehmer und 1 Turnierzustand.
+- Beide Tests nutzen echte RLS- und RPC-Berechtigungen mit synthetischen Claims. Sie sind keine Aufforderung, auf der Preview produktiv zu speichern.
+- Es wurden **keine vorhandenen persönlichen Listen, Passwörter oder Turnierdaten verändert**.
+
 ## Weitere fehlende End-to-End-Validierung
 
 1. Mit echten, selbst eingegebenen Login-Daten in der Preview prüfen, ob die beiden **Third-Party Auth → Custom OIDC** Issuer für die Supabase Data API wirklich akzeptiert werden. Die beiden Issuer selbst antworten auf Discovery/JWKS; ob das Dashboard die Trust-Konfiguration gespeichert hat, ist mit den verfügbaren Connector-Tools nicht direkt lesbar.
