@@ -6,7 +6,7 @@ Gemeinsames Webportal für **Pokémon Hit Tracker**, **Pokémon Pullrates** und 
 - Das neue Repository ist eigenständig. Die drei Original-Repositories bleiben erhalten und unverändert.
 - GitHub Actions baut die drei Anwendungen aus ihren Original-Repositories und veröffentlicht sie unter `/MasterSite/apps/...`.
 - Die MasterSite-Startseite nutzt den öffentlich lesbaren App-Katalog `public.master_site_apps` des Supabase-Projekts **pokemon-hit-tracker** (`entbtqtyxhbozjdbdvns`), mit lokaler Ausweichliste bei Ausfall.
-- **Wichtig:** Die Logins und Anwendungsdaten sind NOCH NICHT in einem Supabase-Projekt zusammengeführt. Die drei Anwendungen verwenden vorübergehend ihre bisherigen Auth-/Datenbankverbindungen. Die getrennten Passwörter bei derselben E-Mail-Adresse müssen vor der Zusammenführung erhalten bleiben.
+- **Aktueller Migrationsstand (15.11.2026):** Feelings-Turnier (4 Tabellen, 5 Datenzeilen) und Pokémon Pullrates (25 Tabellen, 781 Datenzeilen) sind in gesperrte, getrennte Schemas des Supabase-Zielprojekts kopiert und auf Datenunterschiede geprüft. Benutzer-Hashes sind getrennt und sicher im Zielprojekt gesichert. **Noch NICHT produktiv umgestellt:** Logins, SQL-/Edge-Funktionen, Realtime, Storage-Dateien und Anwendungs-APIs. Die Webseiten verwenden bis dahin ihre bisherigen Verbindungen. [Prüfprotokoll](docs/MIGRATION-NACHWEIS-2026-11-15.md).
 
 ## Aufbau
 - `index.html`, `styles.css`, `main.js`, `site-config.js` – MasterSite-Startseite
@@ -19,7 +19,7 @@ Gemeinsames Webportal für **Pokémon Hit Tracker**, **Pokémon Pullrates** und 
 1. In **Settings → Pages** als Quelle **GitHub Actions** auswählen.
 2. Den Workflow **Publish MasterSite** unter **Actions** ausführen oder auf den ersten Commit warten.
 3. MasterSite ist danach (wenn die Veröffentlichung erfolgreich war) unter `https://furfural0405.github.io/MasterSite/` erreichbar.
-4. Vor dem gemeinsamen Datenbankbetrieb die dokumentierte Auth-/Datenmigration und Sicherheitsprüfung abschließen.
+4. Vor dem gemeinsamen Datenbankbetrieb die noch offene Auth-, Funktions- und Storage-Migration sowie Sicherheitsprüfung abschließen.
 
 Die Ziel-Supabase-Datenbank enthält bereits den Katalog für exakt drei Anwendungen. Hier werden keine Passwörter oder Secret-/Service-Role-Schlüssel hinterlegt.
 
