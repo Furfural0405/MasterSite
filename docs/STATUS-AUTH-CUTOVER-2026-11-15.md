@@ -1,7 +1,7 @@
 # MasterSite – Stand der sicheren Auth-Umstellung (15.11.2026)
 
 **Branch:** `auth-cutover-staging` – separate, geschützte Vercel-Preview.
-**Test-Deployment:** https://mastersite-nqfxz37rq-michaeloeichhorst-8656.vercel.app/
+**Test-Deployment:** https://mastersite-git-auth-cutover-staging-michaeloeichhorst-8656.vercel.app/
 
 ## Was bereits bereitsteht
 - `MASTERSITE_ENABLE_NEW_AUTH=1` ist **ausschließlich** für die Vercel-Preview dieses Branches konfiguriert. Die produktive MasterSite und die drei Original-Repositories bleiben unverändert.
@@ -16,27 +16,45 @@
 - Card-images: 9 gesicherte Bilddateien, gleicher Name und gleiche Größe. Neue `site-assets`-Bucket und eng begrenzte Administrator-Upload-Regeln für Feelings; bisher keine gespeicherte Hintergrundbildreferenz im kopierten Settings-Datensatz.
 - Staging-Policies für öffentliche Turnieranmeldung, Pullrates-Editor und Storage-Uploads per JWT-App-Issuer sind erstellt und mit synthetischen Rollentests geprüft; Einfügen von Test-Turnierteilnehmern erfolgte **nur in einer zurückgerollten Transaktion**.
 
-## Aktueller harter Blocker: Exposed schemas
+## Exposed schemas – Fehler `PGRST106` behoben und nachgemessen
 
-**Vom eigenen Vercel-Backend aus über die tatsächliche Supabase Data API getestet:**
+Die ursprüngliche HTTP-Prüfung lieferte 406 / `PGRST106`. Ein reines `NOTIFY pgrst` hat nicht geholfen.
 
-| Schema | HTTP | Code | Ergebnis |
-|---|---:|---|---|
-| `mastersite_feelings` | 406 | `PGRST106` | Nicht in PostgREST Exposed schemas |
-| `mastersite_pullrates` | 406 | `PGRST106` | Nicht in PostgREST Exposed schemas |
+Supabase dokumentiert für diesen Fall einen PostgREST-Rollen-Override:
+https://supabase.com/kb/troubleshooting/pgrst106-the-schema-must-be-one-of-the-following-error-when-querying-an-exposed-schema
 
-Selbstprüf-URL (Preview-Zugriff ggf. nur mit Vercel-Login):
-https://mastersite-nqfxz37rq-michaeloeichhorst-8656.vercel.app/api/mastersite-schema-check
+Daher wurden mit unveränderter Datenbankstruktur folgende Exposed schemas **explizit** eingetragen:
 
-**Nötige Aktion im Supabase-Dashboard:**
-https://supabase.com/dashboard/project/entbtqtyxhbozjdbdvns/settings/api
+```sql
+alter role authenticator set pgrst.db_schemas =
+  'public, graphql_public, mastersite_feelings, mastersite_pullrates';
+notify pgrst, 'reload config';
+notify pgrst, 'reload schema';
+```
 
-Unter **Exposed schemas** die Namen `mastersite_feelings` und `mastersite_pullrates` zu `public` hinzufügen, **Save** klicken und anschließend erneut prüfen. Nur diese zwei Schemas, nicht die privaten Auth-, Sicherungs- und Helper-Schemas hinzufügen.
+**Direkt nach der Änderung über HTTPS getestet:**
+- `mastersite_feelings`: HTTP **200**, öffentlich lesbare `site_settings`-Zeilen
+- `mastersite_pullrates`: HTTP **200**, öffentlich lesbare `pull_rates`-Zeilen
+
+Die Einstellung ist reversibel: `supabase/staging/rollback_pgrst_exposed_schemas.sql`. **Achtung:** Solange der Rollen-Override existiert, überlagert er die `Exposed schemas`-Verwaltung im Supabase-Dashboard. Diese beiden Änderungen nicht gegeneinander ausspielen.
+
+Selbstprüf-Link:
+https://mastersite-git-auth-cutover-staging-michaeloeichhorst-8656.vercel.app/api/mastersite-schema-check
+
+## Aktueller Login-Testbetrieb
+
+- Better-Auth-Dienste `mastersite-feelings-auth` und `mastersite-pullrates-auth`: `ready=true, login_enabled=true`; HTTP 200 für `/get-session` ohne Cookie.
+- Nur der **Vercel-Testbranch** verwendet im Frontend die neue Auth-Bridge. Die Produktivseite und die drei Original-Repositories sind noch nicht umgestellt.
+- Die feste Preview-URL wurde zur `trustedOrigins`-Liste beider Edge Functions hinzugefügt.
+- Die bisher importierten Nutzerkonten sind vorhanden: **2 Feelings + 4 Pullrates**. Kein QA-Benutzer ist hinzugefügt worden.
+- **Echte E-Mail-/Passwort-Anmeldung und JWT-/RLS-Übertragung sind noch nicht als End-to-End-Test bestätigt.** Zur Bestätigung ist die Anmeldung des Kontoinhabers selbst auf der Preview nötig. Der Kontoinhaber muss **kein Passwort an ChatGPT schicken**.
+- **Wichtig:** In der Vorschau derzeit keine neuen Benutzerdaten speichern oder bestehende Einträge ändern. Das Original-Pullrates-Projekt wird noch verwendet, und vor dem produktiven Cutover muss eine letzte Delta-Synchronisierung stattfinden.
+- Funktionen zur Registrierung, Passwortzurücksetzung und zum Löschen von Alt-Konten sind bis zu ihrer gesicherten Umsetzung explizit deaktiviert.
 
 ## Weitere fehlende End-to-End-Validierung
 
-1. Prüfen, ob die beiden **Third-Party Auth → Custom OIDC** Issuer tatsächlich beim Zielprojekt eingetragen sind. Die beiden Issuer selbst antworten auf Discovery/JWKS; ob das Dashboard die Trust-Konfiguration gespeichert hat, ist mit den verfügbaren Connector-Tools nicht direkt lesbar.
-2. Neue Better-Auth-Login-Dienste stehen bewusst auf `login_enabled=false`. Vor Freigabe echte Sign-in-/JWT-/RLS-Tests auf der geschützten Preview durchführen.
+1. Mit echten, selbst eingegebenen Login-Daten in der Preview prüfen, ob die beiden **Third-Party Auth → Custom OIDC** Issuer für die Supabase Data API wirklich akzeptiert werden. Die beiden Issuer selbst antworten auf Discovery/JWKS; ob das Dashboard die Trust-Konfiguration gespeichert hat, ist mit den verfügbaren Connector-Tools nicht direkt lesbar.
+2. Beide Better-Auth-Login-Dienste sind für den geschützten Test eingeschaltet. Vor Produktivfreigabe echte Sign-in-/JWT-/RLS-Tests auf der geschützten Preview durchführen.
 3. Vor allem bei neuem Signup und Passwort-Reset sind E-Mail-Zustellung/Verifikation und Moderationsrechte noch nicht produktionsreif. Es wird kein angeblicher Erfolg gezeigt, wenn die Funktion nicht bereitsteht.
 4. Pullrates-Realtime beim Zielprojekt auf die neuen Tabellen umstellen oder den getesteten 30-Sekunden-Polling-Fallback beibehalten.
 5. Kompletten E2E-Test von User-Login, Datenbearbeitung, Listen, Chat, Admin, Turnierstand und Storage-Upload machen.
