@@ -106,7 +106,7 @@ test("wrong app issuer fails closed and account mutations remain disabled", asyn
     assert.equal(result.data.session,null);
     assert.ok(result.error);
     assert.equal(await options.accessToken(),null);
-    const blocked=await client.auth.signUp({email:"person@example.com",password:"anything"});
+    const blocked=await client.auth.signUp({email:"person@example.com",password:"SufficientlyLongTestPassword12",options:{data:{username:"ExampleUser"}}});
     assert.match(blocked.error.message,/noch nicht freigegeben/);
     assert.match((await client.auth.updateUser({password:"x"})).error.message,/noch nicht freigegeben/);
     assert.match((await client.auth.resetPasswordForEmail("person@example.com")).error.message,/noch nicht freigegeben/);
