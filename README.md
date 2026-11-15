@@ -47,7 +47,7 @@ Die drei Apps werden zu Build-Zeit jeweils separat ausgecheckt. Änderungen an i
 
 - Die beiden Apps verwenden in der vorübergehenden Betriebsphase weiterhin **ihre eigenen Supabase-Auth-Projekte**, damit dieselbe E-Mail-Adresse unterschiedliche Passwörter behalten kann.
 - Das kaum genutzte Projekt `pokemon-hit-tracker` wurde zur **Pausierung** angemeldet; währenddessen sind seine Daten und Login-Funktionen nicht erreichbar. Seine Tabellen und bereits migrierten Snapshots werden **nicht gelöscht**.
-- Das Quellprojekt `Feelings-Turnier` wurde zur **Wiederherstellung** angemeldet. Der Neustart kann Zeit benötigen; erst nach `ACTIVE_HEALTHY` und erfolgreicher Datenbankabfrage kann die Anmeldung als wieder verfügbar gelten.
+- Das Quellprojekt `Feelings-Turnier` wurde **erfolgreich wiederhergestellt (`ACTIVE_HEALTHY`)**. Anschließende SQL-Kontrolle: 2 bestätigte Auth-Benutzer, 2 freigeschaltete Profile, 1 Teilnehmer, 1 Turnierzustand. Ein Test mit echten Benutzerpasswörtern steht naturgemäß noch aus.
 - Pokémon Pullrates bleibt `ACTIVE_HEALTHY`. Falls ein Login dort scheitert, sind Passwortfehler, E-Mail-Bestätigung oder Benutzerfreigabestatus separat zu prüfen; vorhandene Konten/Passwörter werden nicht automatisch geändert.
 - Die Feelings Edge Functions `register-admin-request` und `remove-rejected-admin-request` erlauben jetzt auch die festen Vercel-Domains von MasterSite. Die Original-GitHub-Repositories bleiben unverändert.
 - Die in der Hit-Tracker-Zieldatenbank angelegten Better-Auth-Services sind **weiterhin nicht produktiv aktiviert**. Die vollständige gemeinsame Datenbank-/RLS-Migration steht noch aus.
