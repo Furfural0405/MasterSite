@@ -1,5 +1,6 @@
 import { betterAuth } from "npm:better-auth@1.7.21";
 import { jwt } from "npm:better-auth@1.7.21/plugins";
+import { oauthProvider } from "npm:@better-auth/oauth-provider@1.7.21";
 import bcrypt from "npm:bcryptjs@3.0.2";
 import pg from "npm:pg@8.16.3";
 import { PostgresDialect } from "npm:kysely@0.28.7";
@@ -9,6 +10,12 @@ const SCHEMA = "mastersite_pullrates_auth";
 const SLUG = "mastersite-pullrates-auth";
 const ORIGIN = "https://entbtqtyxhbozjdbdvns.supabase.co";
 const basePath = "/functions/v1/" + SLUG;
+const trustedOrigins = [
+  "https://furfural0405.github.io",
+  "https://mastersite-eta.vercel.app",
+  "https://mastersite-michaeloeichhorst-8656.vercel.app",
+  "https://mastersite-git-main-michaeloeichhorst-8656.vercel.app",
+] as const;
 const pool = new pg.Pool({
   connectionString: Deno.env.get("SUPABASE_DB_URL") || "",
   max: 1,
@@ -33,7 +40,7 @@ async function loadRuntime() {
     baseURL: ORIGIN,
     basePath,
     secret: result.rows[0].auth_secret,
-    trustedOrigins: ["https://furfural0405.github.io"],
+    trustedOrigins: [...trustedOrigins],
     database: {
       dialect: new PostgresDialect({ pool }),
       type: "postgres",
@@ -66,6 +73,11 @@ async function loadRuntime() {
           }),
         },
       }),
+      oauthProvider({
+        loginPage: "https://mastersite-eta.vercel.app/apps/pokemon-pullrates/",
+        consentPage: "https://mastersite-eta.vercel.app/apps/pokemon-pullrates/",
+        scopes: ["openid", "email", "profile"],
+      }),
     ],
   });
   return { auth };
@@ -85,10 +97,13 @@ Deno.serve(async (req) => {
     }
   }
   if (req.method === "OPTIONS") {
+    const requestOrigin = req.headers.get("origin") || "";
+    if (!trustedOrigins.includes(requestOrigin as typeof trustedOrigins[number]))
+      return Response.json({ error: "ORIGIN_NOT_ALLOWED" }, { status: 403 });
     return new Response(null, {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": "https://furfural0405.github.io",
+        "Access-Control-Allow-Origin": requestOrigin,
         "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
         "Access-Control-Allow-Headers": "content-type,authorization",
         "Access-Control-Allow-Credentials": "true",
@@ -99,7 +114,7 @@ Deno.serve(async (req) => {
   try {
     const { auth } = await (runtimePromise ??= loadRuntime());
     const enabled = await isEnabledNow();
-    if (!enabled && !path.endsWith("/jwks")) return Response.json({ error: "AUTH_MIGRATION_NOT_ACTIVATED" }, { status: 503 });
+    if (!enabled && !path.endsWith("/jwks") && !path.endsWith("/.well-known/openid-configuration")) return Response.json({ error: "AUTH_MIGRATION_NOT_ACTIVATED" }, { status: 503 });
     const routedUrl = new URL(req.url);
     if (!routedUrl.pathname.startsWith(basePath)) {
       const old = routedUrl.pathname;
