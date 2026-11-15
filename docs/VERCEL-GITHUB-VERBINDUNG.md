@@ -25,3 +25,18 @@ Die aktuell eingecheckte Vercel-Konfiguration dient der Portal-Bereitstellung un
 - Vor dem Abschalten von `pokemon-pullrates` ist eine abschließende Delta-Synchronisierung und Benutzerprüfung notwendig.
 
 Alle drei originalen GitHub-Repositories bleiben unverändert.
+
+## Aktualisierung: Vercel-Vorschau erfolgreich bereitgestellt (15.11.2026)
+
+- **Vercel-Teamzugriff:** erfolgreich freigegeben; Team `team_Mqlpu4RSNKzS4LsxukV9mJe7`.
+- **GitHub-Kontoverbindung:** bestätigt, aber die Vercel-GitHub-App hat noch keinen Zugriff auf `Furfural0405/MasterSite`. Git-basierter Projektimport scheiterte mit `To link a GitHub repository, you need to install the GitHub integration first.`
+- **Alternative funktionsfähige Vorschau:** Projekt `mastersite-vorschau` (`prj_7ulWMBTsghWfnJFZQfmzG0a2pyA1`), Deployment `dpl_HNzMFhG9q5xb3CjUGF2eNrrw4dJG` mit Zustand `READY`, Build vollständig erfolgreich.
+- **Getestete URL:** https://mastersite-vorschau-gq76g9o7y-michaeloeichhorst-8656.vercel.app/ (durch Vercel Authentication geschützt).
+- **HTTP 200 geprüft:** `/`, `/apps/pokemon-hit-tracker/`, `/apps/pokemon-pullrates/`, `/apps/feelings-turnier/`.
+- **Auth-Rewrite geprüft:** `/api/auth/feelings/health` und `/api/auth/pullrates/health` geben beide `{"ready":true,"login_enabled":false}` zurück.
+- **Build:** 4 Pokémon-Hit-Tracker-Tests und 32 Pokémon-Pullrates-Tests erfolgreich; alle drei Einzel-Apps sind erfolgreich gebaut.
+- **Wichtig:** Ohne Git-Integration sind spätere GitHub-Commits **nicht automatisch** mit dem Vorschauprojekt synchronisiert. Direktes Deployment wurde aus neun MasterSite-Dateien gestartet; der Build holt die drei Original-Repositories nur lesend per Git.
+- **Nicht abgeschlossen:** Datenbank- und Auth-Cutover, RPC/Edge/Realtime/RLS-Anpassungen und letzte Delta-Synchronisierung. Feelings-Turnier-Originalbackend ist pausiert, daher ist die Vorschau **kein vollständiger Funktionstest aller Webseiten**.
+
+### Noch benötigter GitHub-App-Zugriff
+Öffne https://github.com/settings/installations und konfiguriere die **Vercel** GitHub App, damit sie `Furfural0405/MasterSite` sehen darf. Alternativ über https://vercel.com/new den GitHub-Anbieter hinzufügen bzw. Installation abschließen. Danach kann das endgültige Git-basierte Vercel-Projekt `mastersite` verbunden und automatisiert bereitgestellt werden.
