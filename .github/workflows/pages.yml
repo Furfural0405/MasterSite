@@ -1,0 +1,98 @@
+name: Publish MasterSite and three original apps
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: mastersite-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: github-pages
+    steps:
+      - name: Checkout MasterSite
+        uses: actions/checkout@v4
+        with:
+          path: mastersite
+          persist-credentials: false
+      - name: Checkout Pokémon Hit Tracker
+        uses: actions/checkout@v4
+        with:
+          repository: Furfural0405/pokemon-hit-tracker
+          ref: main
+          path: sources/pokemon-hit-tracker
+          persist-credentials: false
+      - name: Checkout Pokémon Pullrates
+        uses: actions/checkout@v4
+        with:
+          repository: Furfural0405/pokemon-pullrates
+          ref: main
+          path: sources/pokemon-pullrates
+          persist-credentials: false
+      - name: Checkout Feelings-Turnier
+        uses: actions/checkout@v4
+        with:
+          repository: Furfural0405/Feelings-Turnier
+          ref: main
+          path: sources/feelings-turnier
+          persist-credentials: false
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Build MasterSite
+        working-directory: mastersite
+        run: |
+          npm test
+          npm run build
+      - name: Build Pokémon Hit Tracker
+        working-directory: sources/pokemon-hit-tracker
+        env:
+          VITE_SUPABASE_URL: https://entbtqtyxhbozjdbdvns.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_51Kjy2GfK6fDkcB7QiG5Eg_NUsGhmh2
+          VITE_BASE_PATH: /MasterSite/apps/pokemon-hit-tracker/
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+          npm run build
+      - name: Build Pokémon Pullrates
+        working-directory: sources/pokemon-pullrates
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+          npm run build
+      - name: Build Feelings-Turnier
+        working-directory: sources/feelings-turnier
+        env:
+          VITE_SUPABASE_URL: https://rwmzxgnbndoeioqksnyn.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_REhjSoFql5jeIPjI3mBwmw_zCjDuSAv
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Collect three applications
+        run: |
+          mkdir -p mastersite/dist/apps/pokemon-hit-tracker
+          mkdir -p mastersite/dist/apps/pokemon-pullrates
+          mkdir -p mastersite/dist/apps/feelings-turnier
+          cp -a sources/pokemon-hit-tracker/dist/. mastersite/dist/apps/pokemon-hit-tracker/
+          cp -a sources/pokemon-pullrates/dist/. mastersite/dist/apps/pokemon-pullrates/
+          cp -a sources/feelings-turnier/dist/. mastersite/dist/apps/feelings-turnier/
+          touch mastersite/dist/.nojekyll
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: mastersite/dist
+      - name: Deploy
+        uses: actions/deploy-pages@v4

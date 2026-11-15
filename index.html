@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101629">
+  <meta name="description" content="MasterSite – zentraler Einstieg in Pokémon Hit Tracker, Pokémon Pullrates und Feelings-Turnier.">
+  <title>MasterSite – Alle Anwendungen</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./main.js"></script>
+</head>
+<body>
+  <header class="header container">
+    <a class="brand" href="./" aria-label="MasterSite Startseite"><span class="brand-logo">M</span> Master<span class="brand-accent">Site</span></a>
+    <a class="header-link" href="#anwendungen">Anwendungen ansehen <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="container">
+    <section class="hero">
+      <p class="overline"><span class="status-dot"></span> DEIN ZENTRALES WEBPORTAL</p>
+      <h1>Alle Projekte.<br><span>Ein zentraler Ort.</span></h1>
+      <p class="hero-desc">Drei eigenständige Anwendungen. Eine gemeinsame Startseite. Wähle eine Anwendung – ihre Funktionen und ihre bestehende Anmeldung bleiben erhalten.</p>
+      <div class="hero-tags"><span>3 Anwendungen</span><span>Eigenständig entwickelbar</span><span>Gemeinsamer Einstieg</span></div>
+    </section>
+    <section id="anwendungen" class="applications" aria-labelledby="apps-title">
+      <div class="section-top">
+        <div><p class="overline">DEINE PROJEKTE</p><h2 id="apps-title">Anwendungen</h2></div>
+        <div class="searchbox"><label for="app-search">Suche</label><input type="search" id="app-search" placeholder="Anwendung suchen …" autocomplete="off"></div>
+      </div>
+      <p id="catalog-notice" class="catalog-notice" aria-live="polite"></p>
+      <div id="cards" class="cards"></div>
+      <p id="empty-search" class="empty-search" hidden>Keine Anwendung gefunden.</p>
+    </section>
+    <aside class="info"><strong>Eigenständig bleiben. Gemeinsam erreichbar sein.</strong><p>Die ursprünglichen GitHub-Repositories bleiben erhalten. MasterSite erstellt veröffentlichte Kopien und führt keine Änderungen an den Originalprojekten durch.</p></aside>
+  </main>
+  <footer class="container footer"><span>© <span id="year"></span> MasterSite</span><span>Dein Portal für drei Projekte.</span></footer>
+</body>
+</html>
