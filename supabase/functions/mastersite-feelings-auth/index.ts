@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
   }
   try {
     const { auth, enabled } = await (runtimePromise ??= loadRuntime());
-    if (!enabled) return Response.json({ error: "AUTH_MIGRATION_NOT_ACTIVATED" }, { status: 503 });
+    if (!enabled && !path.endsWith("/jwks")) return Response.json({ error: "AUTH_MIGRATION_NOT_ACTIVATED" }, { status: 503 });
     const routedUrl = new URL(req.url);
     if (!routedUrl.pathname.startsWith(basePath)) {
       const old = routedUrl.pathname;
