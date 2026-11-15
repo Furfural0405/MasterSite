@@ -16,6 +16,7 @@ export function createMasterSiteClient({createClient, url, key, schema, service}
     throw new Error("Ungültige Supabase-Projektadresse.");
   }
   const path = "/api/auth/" + service;
+  const issuer = url + "/functions/v1/mastersite-" + (service === "feelings" ? "feelings" : "pullrates") + "-auth";
   let currentSession = null;
   let jwt = null;
   let jwtExpiresAt = 0;
@@ -68,7 +69,7 @@ export function createMasterSiteClient({createClient, url, key, schema, service}
         const data = await request("/token");
         if (!data || typeof data.token !== "string") return null;
         const payload = JSON.parse(atob(data.token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-        if (payload.role !== "authenticated" ||
+        if (payload.iss !== issuer || payload.role !== "authenticated" ||
             payload.app_id !== (service === "feelings" ? "feelings-turnier" : "pokemon-pullrates") ||
             typeof payload.sub !== "string") {
           throw new Error("Das Login-Token gehört nicht zur ausgewählten Anwendung.");
