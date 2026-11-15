@@ -15,7 +15,7 @@ Die drei MasterSite-Anwendungen weiter unabhängig betreiben, wobei die geschäf
 |---|---:|---:|---:|---:|---|
 | Pokémon Pullrates | 4 | 9 in Bucket `card-images` | 25 Tabellen | 43 | Quelle aktiv bei Prüfung |
 | Pokémon Hit Tracker | 1 | 0 | Bestehende App-Struktur in `public` | siehe Ausgangsprojekt | Das Zielprojekt enthält MasterSite-Katalog und zwei leere Namensräume |
-| Feelings-Turnier | Erhebung ausstehend | Erhebung ausstehend | Quellprojekt beim Start pausiert | mindestens 2 Edge Functions | Aufweckprozess angestoßen |
+| Feelings-Turnier | 2 | 0 | 5 Tabellen | 10 Datenbankfunktionen + 2 Edge Functions | Quelle geprüft und als Zwischenkopie gesichert |
 
 Die Pullrates-Datenbank enthält Chat-, Geräte-, Inventar-, Markt-, Listen- und Nutzerprofile, persönliche Daten sowie Freigaben/Moderationsdaten. Kein stumpfes `COPY public.*` ausführen.
 
@@ -48,3 +48,14 @@ Die Pullrates-Datenbank enthält Chat-, Geräte-, Inventar-, Markt-, Listen- und
 - https://supabase.com/kb/troubleshooting/migrating-auth-users-between-projects
 
 **WICHTIG:** Dieses Dokument enthält keine personenbezogenen Daten, Schlüssel oder Passworthashes. Alle Produktivmigrationen müssen mit einem getesteten Backup- und Rollbackplan erfolgen.
+
+## Nachtrag: geprüfte Migration der Feelings-Daten
+- Quellprojekt enthält genau **2 Auth-Benutzer, 2 Auth-Identitäten, 2 Profile, 1 Teilnehmer, 1 Turnierzustand, 1 Satz Seiteneinstellungen**.
+- Ein separater, API-gesperrter Transferbereich `mastersite_transfer.feelings_snapshots` wurde im Projekt `pokemon-pullrates` eingerichtet. Sechs strukturierte Datensätze wurden darin kopiert und die Zeilenzahlen abgeglichen.
+- **Es wurden keine Klartext-Passwörter oder Sitzungen exportiert.** Übernommene Passwort-Hashes dürfen ausschließlich für die geschützte Migration genutzt und nicht veröffentlicht werden.
+- Das Original Feelings-Turnier wurde zum Freimachen eines kostenlosen Slots wieder zur Pausierung angemeldet; die Aktivierung des Zielprojekts `pokemon-hit-tracker` wurde angefordert.
+- Noch ausstehend: Übertragung vom temporären Transferbereich ins Zielprojekt, Einrichtung der echten Anwendungstabellen/Authentifizierung, Datenzugriffstests, Bereinigung des temporären Transfers.
+
+## Nachtrag: geprüfte Daten Pokémon Pullrates
+- **4 E-Mail-Benutzer**, **25 Tabellen**, **43 Datenbankfunktionen**, **9 Storage-Dateien** im öffentlichen Bucket `card-images` und mindestens eine aktive Edge Function.
+- Der Bestand enthält persönliche Listen, Bestand, verschlüsselten Chat und Admin-Freigaben. Tabellen allein zu kopieren ersetzt weder Storage-Dateien noch SQL-Funktionen, Realtime oder Anmeldung.
