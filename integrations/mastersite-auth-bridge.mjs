@@ -156,9 +156,53 @@ export function createMasterSiteClient({createClient, url, key, schema, service}
         return {error: null};
       } catch (error) { return {error}; }
     },
-    signUp() { return rejected(disabledFeature); },
-    resetPasswordForEmail() { return rejected(disabledFeature); },
-    updateUser() { return rejected(disabledFeature); },
+    async signUp({email, password, options = {}} = {}) {
+      try {
+        if(typeof email !== "string" || typeof password !== "string" || password.length < 10)
+          throw new Error("Bitte eine E-Mail-Adresse und ein Passwort mit mindestens 10 Zeichen eingeben.");
+        const name = service === "pullrates"
+          ? options?.data?.username
+          : email.trim().split("@")[0];
+        if(typeof name !== "string" || name.trim().length < 2) {
+          throw new Error("Bitte einen gültigen Benutzernamen eingeben.");
+        }
+        const data = await request("/sign-up/email", {
+          method:"POST",
+          body: {email:email.trim().toLowerCase(), password, name:name.trim(),
+            callbackURL: location.origin + location.pathname},
+        });
+        return {data: {user: data?.user ?? null, session: null}, error: null};
+      } catch(error) { return {data: {user:null,session:null}, error}; }
+    },
+    async resetPasswordForEmail(email, options = {}) {
+      try {
+        if(typeof email !== "string" || !email.includes("@"))
+          throw new Error("Bitte eine gültige E-Mail-Adresse eingeben.");
+        await request("/request-password-reset", {
+          method:"POST",
+          body: {email:email.trim().toLowerCase(),
+            redirectTo: location.origin + location.pathname},
+        });
+        return {data: {}, error: null};
+      } catch(error) { return {data: null, error}; }
+    },
+    async updateUser({password} = {}) {
+      try {
+        const resetToken = new URLSearchParams(location.search).get("token");
+        if (!resetToken) throw new Error("Bitte nutze zuerst den Link aus der Passwort-Zurücksetzen-E-Mail.");
+        if (typeof password !== "string" || password.length < 10)
+          throw new Error("Das neue Passwort muss mindestens 10 Zeichen lang sein.");
+        await request("/reset-password",{
+          method:"POST",body:{newPassword:password,token:resetToken},
+        });
+        const clean = new URL(location.href);
+        clean.searchParams.delete("token");
+        clean.searchParams.delete("error");
+        history.replaceState(null,"",clean.pathname+clean.search+clean.hash);
+        expireJwt();
+        return {data:{user:null},error:null};
+      }catch(error){return {data:{user:null},error};}
+    },
   };
 
   const client = createClient(url, key, {
@@ -175,8 +219,16 @@ export function createMasterSiteClient({createClient, url, key, schema, service}
     const methods = client.functions;
     const originalInvoke = methods.invoke.bind(methods);
     methods.invoke = async (name, options) => {
-      if (name === "register-admin-request" || name === "remove-rejected-admin-request") {
-        return {data: {error: disabledFeature}, error: new Error(disabledFeature)};
+      if (name === "register-admin-request") {
+        const result = await auth.signUp({
+          email:options?.body?.email,
+          password:options?.body?.password,
+        });
+        if (result.error) return {data:{error:result.error.message},error:result.error};
+        return {data:{ok:true,userId:result.data?.user?.id ?? null},error:null};
+      }
+      if (name === "remove-rejected-admin-request") {
+        return {data:{error:disabledFeature},error:new Error(disabledFeature)};
       }
       return originalInvoke(name, options);
     };
