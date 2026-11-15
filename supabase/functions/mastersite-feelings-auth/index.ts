@@ -52,6 +52,7 @@ async function loadRuntime() {
     advanced: {
       cookiePrefix: "mastersite_feelings",
       useSecureCookies: true,
+      database: { generateId: () => crypto.randomUUID() },
     },
     plugins: [
       jwt({
