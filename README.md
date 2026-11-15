@@ -40,3 +40,14 @@ Die drei Apps werden zu Build-Zeit jeweils separat ausgecheckt. Änderungen an i
 - Registrierungstest mit temporären UUID-Benutzern und anschließender Transaktions-Rollback erfolgreich; neue Profile sind `pending` ohne Adminrechte. Ein interaktiver Passwort-Login-Test steht noch aus.
 - Vercel-Hosting noch **nicht** verknüpft (Teamfreigabe notwendig). GitHub Pages noch **nicht** aktiviert. CI-Build der drei Apps und MasterSite-Tests erfolgreich; GitHub-Pages-Deployment scheitert erst an der fehlenden Pages-Freischaltung.
 - Details: [Migrationsnachweis](docs/MIGRATION-NACHWEIS-2026-11-15.md) · [Auth-Architektur](docs/AUTH-ARCHITEKTUR.md).
+
+## Aktueller Login-Notbetrieb (15.11.2026)
+
+**Priorität:** vorhandene Benutzerkonten von Feelings-Turnier und Pokémon Pullrates wieder anmeldbar machen.
+
+- Die beiden Apps verwenden in der vorübergehenden Betriebsphase weiterhin **ihre eigenen Supabase-Auth-Projekte**, damit dieselbe E-Mail-Adresse unterschiedliche Passwörter behalten kann.
+- Das kaum genutzte Projekt `pokemon-hit-tracker` wurde zur **Pausierung** angemeldet; währenddessen sind seine Daten und Login-Funktionen nicht erreichbar. Seine Tabellen und bereits migrierten Snapshots werden **nicht gelöscht**.
+- Das Quellprojekt `Feelings-Turnier` wurde zur **Wiederherstellung** angemeldet. Der Neustart kann Zeit benötigen; erst nach `ACTIVE_HEALTHY` und erfolgreicher Datenbankabfrage kann die Anmeldung als wieder verfügbar gelten.
+- Pokémon Pullrates bleibt `ACTIVE_HEALTHY`. Falls ein Login dort scheitert, sind Passwortfehler, E-Mail-Bestätigung oder Benutzerfreigabestatus separat zu prüfen; vorhandene Konten/Passwörter werden nicht automatisch geändert.
+- Die Feelings Edge Functions `register-admin-request` und `remove-rejected-admin-request` erlauben jetzt auch die festen Vercel-Domains von MasterSite. Die Original-GitHub-Repositories bleiben unverändert.
+- Die in der Hit-Tracker-Zieldatenbank angelegten Better-Auth-Services sind **weiterhin nicht produktiv aktiviert**. Die vollständige gemeinsame Datenbank-/RLS-Migration steht noch aus.
