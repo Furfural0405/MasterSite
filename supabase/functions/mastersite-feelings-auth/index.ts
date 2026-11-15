@@ -77,6 +77,8 @@ async function loadRuntime() {
         loginPage: "https://mastersite-eta.vercel.app/apps/feelings-turnier/",
         consentPage: "https://mastersite-eta.vercel.app/apps/feelings-turnier/",
         scopes: ["openid", "email", "profile"],
+        customAccessTokenClaims: () => ({ role: "authenticated", app_id: SERVICE }),
+        customIdTokenClaims: () => ({ role: "authenticated", app_id: SERVICE }),
       }),
     ],
   });
