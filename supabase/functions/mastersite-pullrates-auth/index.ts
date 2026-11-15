@@ -23,7 +23,7 @@ async function sendAuthEmail(to: string, subject: string, url: string): Promise<
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: "Bearer " + mailKey, "Content-Type": "application/json" },
-    body: JSON.stringify({from: mailFrom, to: [to], subject, text: appName + "\\n\\n" + url + "\\n\\nDieser Link ist nur für dein eigenes Konto bestimmt."}),
+    body: JSON.stringify({from: mailFrom, to: [to], subject, text: appName + "\n\n" + url + "\n\nDieser Link ist nur für dein eigenes Konto bestimmt."}),
     signal: AbortSignal.timeout(12000),
   });
   if (!response.ok) throw new Error("MAIL_SEND_FAILED");
