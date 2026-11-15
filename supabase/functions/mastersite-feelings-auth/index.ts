@@ -15,6 +15,7 @@ const trustedOrigins = [
   "https://mastersite-eta.vercel.app",
   "https://mastersite-michaeloeichhorst-8656.vercel.app",
   "https://mastersite-git-main-michaeloeichhorst-8656.vercel.app",
+  "https://mastersite-git-auth-cutover-staging-michaeloeichhorst-8656.vercel.app",
 ] as const;
 const pool = new pg.Pool({
   connectionString: Deno.env.get("SUPABASE_DB_URL") || "",
