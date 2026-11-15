@@ -1,7 +1,7 @@
 # Nachweis: Migration der Anwendungsdaten (15.11.2026)
 
 **Ziel:** Supabase-Projekt `pokemon-hit-tracker`, ID `entbtqtyxhbozjdbdvns`.
-**Stand:** Daten kopiert und geprüft; AUTH, Storage-Bytes, Serverfunktionen und App-Umschaltung **noch offen**.
+**Stand:** Daten und Storage-Dateien kopiert und geprüft; AUTH, Serverfunktionen, Realtime, finale Synchronisierung und App-Umschaltung **noch offen**.
 
 ## Bestätigte Übertragung
 
@@ -14,7 +14,7 @@
 - Feelings-Datenbankspiegel wurden vollständig befüllt: Profile 2, Teilnehmer 1, Site-Settings 1, Turnierstatus 1; symmetrischer JSONB-Zeilenvergleich: **0 Unterschiede**.
 - Im rein privaten Schema `mastersite_migration` gibt es **6 Feelings-Snapshots** (4 Daten + 2 Auth) und **29 Pullrates-Snapshots** (25 Daten + 2 Auth + 2 Storage-Metadaten). Alle Zeilenzahlen und MD5-Prüfsummen dieser übertragenen Snapshots waren korrekt.
 - Die bisherigen bcrypt-Passworthashes sind in `mastersite_migration.auth_snapshots` geschützt gesichert, **nicht** in Better-Auth-Login-Tabellen importiert und **nicht** für neue Logins freigeschaltet.
-- Pullrates Storage: Metadaten zu 1 Bucket und 9 Dateien übertragen, die **Binärdateien selbst fehlen noch**.
+- Pullrates Storage: **Alle 9 Binärdateien vollständig übertragen** in den öffentlichen Bucket `card-images` des Zielprojekts, insgesamt **524.120 Bytes**. Die 9 Objektpfade wurden mit dem Quell-Snapshot abgeglichen. Der nur für die Übertragung verwendete Edge-Function-Endpunkt wurde anschließend deaktiviert und die dafür installierte pg_net-Erweiterung wieder entfernt.
 - Der Transferbereich `mastersite_transfer` im Pullrates-Quellprojekt wurde nach verifiziertem Kopieren wieder entfernt.
 
 ## Sicherheitsstatus
@@ -27,7 +27,7 @@
 1. Für Feelings und Pullrates eigene, voll funktionsfähige Better-Auth-Dienste in getrennten Schemas `mastersite_feelings_auth` und `mastersite_pullrates_auth` installieren und im Server-Hosting bereitstellen. Der ursprüngliche Hit Tracker behält seine eigene Auth-Instanz.
 2. Passwort-Hashes aus privaten Snapshots nur im sicheren Backend in die endgültigen Better-Auth-Tabellen übertragen; Anmeldungen mit derselben E-Mail und unterschiedlichen Passwörtern testen. Keine Hashwerte in Logs.
 3. Alle DB-Funktionen, Trigger, RLS-/Storage-Policies, Edge Functions und Realtime-Kanäle passend zu den neuen Benutzerausstellern portieren. Pullrates enthält 43 eigene Datenbankfunktionen; Feelings 10 sowie 2 Edge Functions.
-4. Die 9 Pullrates-Bilddateien (nicht nur Metadaten) in einen passenden Bucket im Zielprojekt übertragen und URLs im neuen Frontend aktualisieren.
+4. **Storage-Dateiübertragung abgeschlossen.** Beim App-Cutover prüfen, dass alle bisherigen Bildpfade auf den neuen Bucket `card-images` des Zielprojekts zeigen und die Zugriffspolicies passen.
 5. Individuelle App-Frontends/Backends für die neue Auth-/Data-API anpassen und testen. Die aktuellen Kopien in MasterSite benutzen bis dahin die **alten** Auth-/API-Verbindungen.
 6. **Finale Synchronisierung** von Pullrates-Daten kurz vor Umschaltung: Die Quelle ist aktiv und kann seit dem Snapshot neue Einträge enthalten. Gegen aktuelle Quelle verifizieren; niemals nur die heute kopierten 781 Zeilen als garantierten endgültigen Stand betrachten.
 7. Nach getesteter Daten- und Login-Funktion die bisherigen Quellen als Rollback-Option zunächst erhalten (pausieren statt löschen).
