@@ -16,7 +16,11 @@ const pool = new pg.Pool({
   idleTimeoutMillis: 10000,
 });
 
-let runtimePromise: Promise<{ auth: ReturnType<typeof betterAuth>; enabled: boolean }> | null = null;
+let runtimePromise: Promise<{ auth: ReturnType<typeof betterAuth> }> | null = null;
+async function isEnabledNow(): Promise<boolean> {
+  const r = await pool.query("select enabled from mastersite_migration.auth_runtime_config where service_name=$1",[SERVICE]);
+  return r.rows[0]?.enabled === true;
+}
 async function loadRuntime() {
   const result = await pool.query(
     "select auth_secret, enabled from mastersite_migration.auth_runtime_config where service_name=$1",
@@ -63,14 +67,15 @@ async function loadRuntime() {
       }),
     ],
   });
-  return { auth, enabled: Boolean(result.rows[0].enabled) };
+  return { auth };
 }
 
 Deno.serve(async (req) => {
   const path = new URL(req.url).pathname;
   if (path.endsWith("/health") && req.method === "GET") {
     try {
-      const { auth, enabled } = await (runtimePromise ??= loadRuntime());
+      const { auth } = await (runtimePromise ??= loadRuntime());
+      const enabled = await isEnabledNow();
       if (!auth) throw Error("Auth unavailable");
       return Response.json({ ready: true, login_enabled: enabled });
     } catch {
@@ -91,7 +96,8 @@ Deno.serve(async (req) => {
     });
   }
   try {
-    const { auth, enabled } = await (runtimePromise ??= loadRuntime());
+    const { auth } = await (runtimePromise ??= loadRuntime());
+    const enabled = await isEnabledNow();
     if (!enabled && !path.endsWith("/jwks")) return Response.json({ error: "AUTH_MIGRATION_NOT_ACTIVATED" }, { status: 503 });
     const routedUrl = new URL(req.url);
     if (!routedUrl.pathname.startsWith(basePath)) {
