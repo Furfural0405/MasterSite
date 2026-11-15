@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/auth/feelings/:path*",
+      "destination": "https://entbtqtyxhbozjdbdvns.supabase.co/functions/v1/mastersite-feelings-auth/:path*"
+    },
+    {
+      "source": "/api/auth/pullrates/:path*",
+      "destination": "https://entbtqtyxhbozjdbdvns.supabase.co/functions/v1/mastersite-pullrates-auth/:path*"
+    }
+  ]
+}
