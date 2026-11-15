@@ -166,6 +166,8 @@ export function createMasterSiteClient({createClient, url, key, schema, service}
         if(typeof name !== "string" || name.trim().length < 2) {
           throw new Error("Bitte einen gültigen Benutzernamen eingeben.");
         }
+        const caps = await request("/health");
+        if(!caps?.signup_enabled) throw new Error(disabledFeature);
         const data = await request("/sign-up/email", {
           method:"POST",
           body: {email:email.trim().toLowerCase(), password, name:name.trim(),
@@ -178,6 +180,8 @@ export function createMasterSiteClient({createClient, url, key, schema, service}
       try {
         if(typeof email !== "string" || !email.includes("@"))
           throw new Error("Bitte eine gültige E-Mail-Adresse eingeben.");
+        const caps = await request("/health");
+        if(!caps?.password_reset_enabled) throw new Error(disabledFeature);
         await request("/request-password-reset", {
           method:"POST",
           body: {email:email.trim().toLowerCase(),
@@ -188,6 +192,8 @@ export function createMasterSiteClient({createClient, url, key, schema, service}
     },
     async updateUser({password} = {}) {
       try {
+        const caps = await request("/health");
+        if(!caps?.password_reset_enabled) throw new Error(disabledFeature);
         const resetToken = new URLSearchParams(location.search).get("token");
         if (!resetToken) throw new Error("Bitte nutze zuerst den Link aus der Passwort-Zurücksetzen-E-Mail.");
         if (typeof password !== "string" || password.length < 10)
