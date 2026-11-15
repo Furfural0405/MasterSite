@@ -122,3 +122,49 @@ test("legacy Feelings registration and deletion functions are never called on ol
     assert.equal((await client.functions.invoke("unrelated")).data.name,"unrelated");
   } finally {restore();}
 });
+
+test("email-backed signup and password-reset routing require their own verified service", async () => {
+  const originalLocation=globalThis.location, originalHistory=globalThis.history;
+  globalThis.location={origin:"https://mastersite-eta.vercel.app",pathname:"/apps/pokemon-pullrates/",search:"?token=reset-opaque-token",href:"https://mastersite-eta.vercel.app/apps/pokemon-pullrates/?token=reset-opaque-token",hash:""};
+  let cleanUrl=null;
+  globalThis.history={replaceState:(_data,_title,path)=>{cleanUrl=path;}};
+  const seen=[];
+  const {client,restore}=construct({
+    service:"pullrates",
+    responder:(input, init)=>{
+      if(input.endsWith("/health")) return {signup_enabled:true,password_reset_enabled:true};
+      if(input.endsWith("/sign-up/email")){
+        const body=JSON.parse(init.body); seen.push({operation:"signup",body});
+        return {user:{id:uid,email:body.email}};
+      }
+      if(input.endsWith("/request-password-reset")){
+        seen.push({operation:"request-reset",body:JSON.parse(init.body)});
+        return {success:true};
+      }
+      if(input.endsWith("/reset-password")){
+        seen.push({operation:"reset",body:JSON.parse(init.body)});
+        return {success:true};
+      }
+      return {};
+    },
+  });
+  try {
+    const signup=await client.auth.signUp({
+      email:" Other@Example.com ",password:"This is a valid test password",
+      options:{data:{username:"OtherTester"}},
+    });
+    assert.equal(signup.error,null);
+    assert.equal(seen[0].body.name,"OtherTester");
+    assert.equal(seen[0].body.callbackURL,"https://mastersite-eta.vercel.app/apps/pokemon-pullrates/");
+    assert.equal(seen[0].body.email,"other@example.com");
+    assert.equal((await client.auth.resetPasswordForEmail("Other@example.com")).error,null);
+    assert.equal(seen[1].body.redirectTo,"https://mastersite-eta.vercel.app/apps/pokemon-pullrates/");
+    assert.equal((await client.auth.updateUser({password:"New test password 1234"})).error,null);
+    assert.equal(seen[2].body.token,"reset-opaque-token");
+    assert.equal(cleanUrl,"/apps/pokemon-pullrates/");
+  } finally {
+    restore();
+    if(originalLocation===undefined)delete globalThis.location;else globalThis.location=originalLocation;
+    if(originalHistory===undefined)delete globalThis.history;else globalThis.history=originalHistory;
+  }
+});
