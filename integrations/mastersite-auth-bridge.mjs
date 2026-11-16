@@ -149,7 +149,7 @@ export function createMasterSiteClient({createClient, url, key, schema, service}
     },
     async signOut() {
       try {
-        await request("/sign-out", {method: "POST"});
+        await request("/sign-out", {method: "POST", body: {}});
         expireJwt();
         currentSession = null;
         emit("SIGNED_OUT", null);
