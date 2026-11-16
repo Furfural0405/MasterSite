@@ -26,7 +26,7 @@ async function sendAuthEmail(to: string, subject: string, url: string): Promise<
     body: JSON.stringify({from: mailFrom, to: [to], subject, text: appName + "\n\n" + url + "\n\nDieser Link ist nur für dein eigenes Konto bestimmt."}),
     signal: AbortSignal.timeout(12000),
   });
-  if (!response.ok) throw new Error("MAIL_SEND_FAILED");
+  if (!response.ok) {\n    console.error("AUTH_EMAIL_PROVIDER_REJECTED status=" + response.status);\n    throw new Error("MAIL_SEND_FAILED");\n  }
 }
 
 const trustedOrigins = [
