@@ -10,11 +10,34 @@ const SCHEMA = "mastersite_feelings_auth";
 const SLUG = "mastersite-feelings-auth";
 const ORIGIN = "https://entbtqtyxhbozjdbdvns.supabase.co";
 const basePath = "/functions/v1/" + SLUG;
+const mailKey = Deno.env.get("MASTERSITE_RESEND_API_KEY") ?? "";
+const mailFrom = Deno.env.get("MASTERSITE_MAIL_FROM") ?? "";
+const emailReady = mailKey.startsWith("re_") && mailFrom.includes("@");
+const appName = SERVICE === "feelings-turnier" ? "Feelings-Turnier" : "Pokémon Pullrates";
+async function sendAuthEmail(to: string, subject: string, url: string): Promise<void> {
+  if (!emailReady) throw new Error("MAIL_NOT_CONFIGURED");
+  const checked = new URL(url);
+  if (checked.origin !== ORIGIN || !checked.pathname.startsWith(basePath + "/")) {
+    throw new Error("INVALID_VERIFICATION_URL");
+  }
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + mailKey, "Content-Type": "application/json" },
+    body: JSON.stringify({from: mailFrom, to: [to], subject, text: appName + "\n\n" + url + "\n\nDieser Link ist nur für dein eigenes Konto bestimmt."}),
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!response.ok) {
+    console.error("AUTH_EMAIL_PROVIDER_REJECTED status=" + response.status);
+    throw new Error("MAIL_SEND_FAILED");
+  }
+}
+
 const trustedOrigins = [
   "https://furfural0405.github.io",
   "https://mastersite-eta.vercel.app",
   "https://mastersite-michaeloeichhorst-8656.vercel.app",
   "https://mastersite-git-main-michaeloeichhorst-8656.vercel.app",
+  "https://mastersite-git-auth-cutover-staging-michaeloeichhorst-8656.vercel.app",
 ] as const;
 const pool = new pg.Pool({
   connectionString: Deno.env.get("SUPABASE_DB_URL") || "",
@@ -48,14 +71,27 @@ async function loadRuntime() {
     },
     emailAndPassword: {
       enabled: true,
-      disableSignUp: true,
+      disableSignUp: !emailReady,
       requireEmailVerification: true,
+      minPasswordLength: 10,
+      maxPasswordLength: 128,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: emailReady ? async ({ user, url }: { user: {email: string}; url: string }) => {
+        await sendAuthEmail(user.email, appName + ": Passwort zurücksetzen", url);
+      } : undefined,
       password: {
         hash: async (password: string) => bcrypt.hash(password, 12),
         verify: async ({ hash, password }: { hash: string; password: string }) =>
           bcrypt.compare(password, hash),
       },
     },
+    emailVerification: emailReady ? {
+      sendOnSignUp: true,
+      sendOnSignIn: true,
+      sendVerificationEmail: async ({ user, url }: {user: {email:string}; url:string}) => {
+        await sendAuthEmail(user.email, appName + ": E-Mail-Adresse bestätigen", url);
+      },
+    } : undefined,
     advanced: {
       cookiePrefix: "mastersite_feelings",
       useSecureCookies: true,
@@ -92,7 +128,7 @@ Deno.serve(async (req) => {
       const { auth } = await (runtimePromise ??= loadRuntime());
       const enabled = await isEnabledNow();
       if (!auth) throw Error("Auth unavailable");
-      return Response.json({ ready: true, login_enabled: enabled });
+      return Response.json({ ready: true, login_enabled: enabled, signup_enabled: enabled && emailReady, password_reset_enabled: enabled && emailReady });
     } catch {
       runtimePromise = null;
       return Response.json({ ready: false }, { status: 503 });
